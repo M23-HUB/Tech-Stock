@@ -3,11 +3,12 @@ import requests
 import json
 import pandas as pd
 import time
+from datetime import datetime
 # from io import StringIO
 
 #------- CONSTANT VARIABLES -------#
 
-APPID = "XWNGEJQ28OXHLHNT"
+APPID = os.getenv("ALPHA_VANTAGE_KEY")
 STOCKS = {
     "AAPL": "APPLE INC. (XMAS:AAPL)",
     "AMZN": "AMAZON.COM, INC. (XMAS:AMZN)",
@@ -53,12 +54,9 @@ def fetch_and_save_stock(symbol, company_name, api_key):
     }
 
     print(f" -- Processing {company_name} ({symbol})")
-
-    # Create separate variables
+    
     daily_data = None
     monthly_data = None
-    # daily_response = None
-    # monthly_response = None
 
     try:      
       for func_key, (series_key, name) in functions.items():
@@ -112,11 +110,44 @@ def combine_all_stock_data():
   except Exception as e:
     print(f"Error combining data: {e}")
 
+def trigger_power_bi_refresh():
+    
+    try:
+        from pyfabricops import FabricClient
+        
+        client = FabricClient(
+            tenant_id=os.getenv('POWER_BI_TENANT_ID'),
+            client_id=os.getenv('POWER_BI_CLIENT_ID'),
+            client_secret=os.getenv('POWER_BI_CLIENT_SECRET')
+        )
+        
+        workspace_id = os.getenv('POWER_BI_WORKSPACE_ID')
+        dataset_id = os.getenv('POWER_BI_DATASET_ID')
+        
+        # Trigger refresh
+        response = client.refresh_dataset(workspace_id, dataset_id)
+        print(f"Power BI refresh triggered: {response}")
+        return True
+    except Exception as e:
+        print(f"Failed to trigger Power BI refresh: {e}")
+        return False
+    
 # Main execution
 if __name__ == "__main__":
-  print(f" - Starting data fetch for {len(STOCKS)} stocks...\n")
+    print(f" - Starting data fetch for {len(STOCKS)} stocks...\n")
+    print(f" - Run time: {datetime.now()}")
+    
+    for symbol, company_name in STOCKS.items():
+        fetch_and_save_stock(symbol, company_name, APPID)
 
-  for symbol, company_name in STOCKS.items():
-      fetch_and_save_stock(symbol, company_name, APPID)
+    print("\n - All data fetched successfully!")
+  
+    try:
+        combined_df = combine_all_stock_data()
+        combined_df.to_csv('stock_data_combined.csv', index=False)
+        print("Combined data saved to stock_data_combined.csv")
+    except Exception as e:
+        print(f"Error saving combined data: {e}")
 
-  print("\n - All data fetched successfully!")
+    # Trigger Power BI refresh
+    trigger_power_bi_refresh()
