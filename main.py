@@ -4,7 +4,6 @@ import json
 import pandas as pd
 import time
 from datetime import datetime
-# from io import StringIO
 
 #------- CONSTANT VARIABLES -------#
 
