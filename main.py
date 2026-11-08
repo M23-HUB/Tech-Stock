@@ -10,6 +10,8 @@ from pyfabricops import FabricClient
 #------- CONSTANT VARIABLES -------#
 
 APPID = os.getenv("ALPHA_VANTAGE_KEY")
+SERPAPI_KEY = os.getenv("SERPAPI_KEY")
+
 STOCKS = {
     "AAPL": "APPLE INC. (XMAS:AAPL)",
     "AMZN": "AMAZON.COM, INC. (XMAS:AMZN)",
@@ -23,28 +25,79 @@ STOCKS = {
     "TSLA": "Tesla Inc"
 }
 
-#------ API REQUEST ------#
+NEWS_STATE_FILE = "news_last_updated.json"
 
-def save_stock_data(filename, new_data, series_key, symbol):
+# ------- NEWS -------#
+
+def fetch_latest_news(company_name, api_key):
+    """Fetch the last week of Google News headlines for a company."""
     try:
-        with open(filename, "r") as data:
-            loaded = json.load(data)
-    except (FileNotFoundError, json.JSONDecodeError):
-        loaded = {}
-    
-    loaded.setdefault(symbol, {}).update(new_data.get(series_key, {}))
-    
-    with open(filename, "w") as data:
-        json.dump(loaded, data, indent=4)
-    
-    # Return the processed dataframe
-    
-    df = pd.DataFrame.from_dict(loaded[symbol], orient='index')
-    df.columns = [col.split('. ')[1].title() for col in df.columns]
-    df.index = pd.to_datetime(df.index)
-    df = df.sort_index().astype(float).reset_index().rename(columns={'index':'Date'})
-    return df
+        client = serpapi.Client(api_key=api_key, timeout=20)
+        results = client.search({
+            "engine": "google_news",
+            "q": f"{company_name} when:1w",
+            "gl": "us",
+            "hl": "en",
+        })
 
+        news_list = []
+        for item in results.get("news_results", [])[:3]:
+            source = item.get("source")
+            news_list.append({
+                "title": item.get("title"),
+                "link": item.get("link"),
+                "source": source.get("name") if isinstance(source, dict) else source,
+            })
+        return news_list
+    except Exception as e:
+        print(f"Failed to fetch news for {company_name}: {e}")
+        return []
+
+def should_refresh_news(interval_days=7):
+    """True if >= interval_days since the last successful news refresh."""
+    if not os.path.exists(NEWS_STATE_FILE):
+        return True
+    try:
+        with open(NEWS_STATE_FILE) as f:
+            last = datetime.fromisoformat(json.load(f)["last_updated"])
+        return datetime.now() - last >= timedelta(days=interval_days)
+    except (json.JSONDecodeError, KeyError, ValueError):
+        return True
+
+def mark_news_refreshed():
+    with open(NEWS_STATE_FILE, "w") as f:
+        json.dump({"last_updated": datetime.now().isoformat()}, f, indent=2)
+
+def refresh_all_news():
+    """Refresh company_info.json for all tickers. Returns True on success."""
+    if not SERPAPI_KEY:
+        print(" --- SERPAPI_KEY is not set, skipping news refresh")
+        return False
+
+    if not should_refresh_news(interval_days=7):
+        print(" - News refreshed <7 days ago, skipping.")
+        return False
+
+    print(f" - Refreshing news for {len(STOCKS)} stocks...\n")
+    info_section = {}
+    for symbol, company_name in STOCKS.items():
+        news = fetch_latest_news(company_name, SERPAPI_KEY)
+        info_section[symbol] = {
+            "company": company_name,
+            "last_updated": datetime.now().strftime("%Y-%m-%d %H:%M"),
+            "top_news": news or "No recent news found.",
+        }
+        time.sleep(1)
+
+    with open("company_info.json", "w") as f:
+        json.dump(info_section, f, indent=4)
+
+    mark_news_refreshed()
+    print(f" - News saved to company_info.json ({len(info_section)} tickers).")
+    return True
+
+#------ API REQUEST ------#
+    
 def fetch_and_save_stock(symbol, company_name, api_key, series_types=("TIME_SERIES_DAILY", "TIME_SERIES_MONTHLY")):
    
     """
@@ -92,6 +145,26 @@ def fetch_and_save_stock(symbol, company_name, api_key, series_types=("TIME_SERI
         print(f" --- Network error for {symbol}: {e}")
     except Exception as e:
         print(f" --- Unexpected error for {symbol}: {e}")
+
+def save_stock_data(filename, new_data, series_key, symbol):
+    try:
+        with open(filename, "r") as data:
+            loaded = json.load(data)
+    except (FileNotFoundError, json.JSONDecodeError):
+        loaded = {}
+    
+    loaded.setdefault(symbol, {}).update(new_data.get(series_key, {}))
+    
+    with open(filename, "w") as data:
+        json.dump(loaded, data, indent=4)
+    
+    # Return the processed dataframe
+    
+    df = pd.DataFrame.from_dict(loaded[symbol], orient='index')
+    df.columns = [col.split('. ')[1].title() for col in df.columns]
+    df.index = pd.to_datetime(df.index)
+    df = df.sort_index().astype(float).reset_index().rename(columns={'index':'Date'})
+    return df
 
 def combine_all_stock_data(source_file='Monthly_stock_data.json',
                            output_file='stock_data_combined.csv'):
@@ -149,6 +222,8 @@ def combine_all_stock_data(source_file='Monthly_stock_data.json',
     except Exception as e:
         print(f"Error combining data: {e}")
         return None
+
+# ------- POWER BI -------#
       
 def trigger_power_bi_refresh():
   
@@ -171,18 +246,22 @@ def trigger_power_bi_refresh():
         print(f"Failed to trigger Power BI refresh: {e}")
         return False
       
-# Main execution
+# ------- MAIN -------#
 
 if __name__ == "__main__":
 
-    parser = argparse.ArgumentParser(description="Fetch Alpha Vantage stock data.")
+    parser = argparse.ArgumentParser(description="Fetch Alpha Vantage stock data + news.")
     parser.add_argument(
         "mode",
-        choices=["daily", "monthly"],
-        help="daily = refresh daily bars; monthly = refresh monthly bars",
+        choices=["daily", "monthly","news"],
+        help="daily = refresh daily bars; monthly = refresh monthly bars: news = refresh company news",
     )
     args = parser.parse_args()
 
+    if args.mode == "news":
+        ok = refresh_all_news()
+        raise SystemExit(0 if ok else 1)
+    
     if args.mode == "daily":
         series_types = ("TIME_SERIES_DAILY",)
         source_file  = "Daily_stock_data.json"
@@ -192,18 +271,16 @@ if __name__ == "__main__":
         source_file  = "Monthly_stock_data.json"
         output_file  = "stock_data_combined_monthly.csv"    
     
-    print(f" - Starting data fetch for {len(STOCKS)} stocks...\n")
+    print(f" - Starting {args.mode} fetch for {len(STOCKS)} stocks...\n")
 
     for symbol, company_name in STOCKS.items():
-        fetch_and_save_stock(symbol, company_name, APPID)
-
+        fetch_and_save_stock(symbol, company_name, APPID, series_types=series_types)
     print("\n - All data fetched successfully!")
 
-    combined_df = combine_all_stock_data()
+    combined_df = combine_all_stock_data(source_file=source_file, output_file=output_file)
     if combined_df is not None:
-        print(f"Combined data saved to stock_data_combined.csv ({len(combined_df)} rows)")
+        print(f"Combined {args.mode} data saved ({len(combined_df)} rows)")
     else:
         print("Combining failed - see error above. No CSV written.")
-
-    # Trigger Power BI refresh
+    
     trigger_power_bi_refresh()
