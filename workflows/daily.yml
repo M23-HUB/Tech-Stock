@@ -20,7 +20,7 @@ jobs:
         cache: 'pip'
         
     - name: Get File
-      run: python live_data.py daily
+      run: python main.py daily
         
     - name: Install dependencies
       run: |
