@@ -1,26 +1,26 @@
 name: Daily Stock Data Update
 
-on:
-  # Run on schedule (daily at 8:00 AM UTC)
+on:  
   schedule:
-    - cron: '0 8 * * *'
-  
-  # Allow manual trigger from GitHub UI
+    - cron: "0 22 * * 1-5"
   workflow_dispatch:
 
 jobs:
-  update-stock-data:
+  fetch:
     runs-on: ubuntu-latest
     
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
-        python-version: '3.10'
+        python-version: '3.11'
         cache: 'pip'
+        
+    - name: Get File
+      run: python live_data.py daily
         
     - name: Install dependencies
       run: |
