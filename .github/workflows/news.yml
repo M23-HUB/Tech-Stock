@@ -21,7 +21,7 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Fetch news
-        run: python your_script.py news
+        run: python main.py news
         env:
           SERPAPI_KEY: ${{ secrets.SERPAPI_KEY }}
 
