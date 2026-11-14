@@ -21,7 +21,7 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Fetch monthly bars
-        run: python your_script.py monthly
+        run: python main.py monthly
         env:
           TWELVEDATA_API: ${{ secrets.TWELVEDATA_API }}
           POWER_BI_TENANT_ID:    ${{ secrets.POWER_BI_TENANT_ID }}
