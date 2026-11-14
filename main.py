@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 from twelvedata import TDClient
 import argparse
 import serpapi
-from pyfabricops import FabricClient
+import pyfabricops as pf
 
 #------- CONSTANT VARIABLES -------#
 
@@ -263,20 +263,14 @@ def combine_all_stock_data(
 # ------- POWER BI -------#
       
 def trigger_power_bi_refresh():
-  
-    try:
-        
-        client = FabricClient(
-            tenant_id=os.getenv('POWER_BI_TENANT_ID'),
-            client_id=os.getenv('POWER_BI_CLIENT_ID'),
-            client_secret=os.getenv('POWER_BI_CLIENT_SECRET')
-        )
-        
+    
+    pf.set_auth_provider("env")
+    try:                        
         workspace_id = os.getenv('POWER_BI_WORKSPACE_ID')
         dataset_id = os.getenv('POWER_BI_DATASET_ID')
         
         # Trigger refresh
-        response = client.refresh_dataset(workspace_id, dataset_id)
+        response = pf.refresh_semantic_model(workspace_id, dataset_id)
         print(f"Power BI refresh triggered: {response}")
         return True
     except Exception as e:
