@@ -1,0 +1,39 @@
+name: Monthly stock data
+on:
+  schedule:
+    - cron: "0 3 1 * *"     # 03:00 UTC on the 1st of each month
+  workflow_dispatch:
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Fetch monthly bars
+        run: python your_script.py monthly
+        env:
+          TWELVEDATA_API: ${{ secrets.TWELVEDATA_API }}
+          POWER_BI_TENANT_ID:    ${{ secrets.POWER_BI_TENANT_ID }}
+          POWER_BI_CLIENT_ID:    ${{ secrets.POWER_BI_CLIENT_ID }}
+          POWER_BI_CLIENT_SECRET: ${{ secrets.POWER_BI_CLIENT_SECRET }}
+          POWER_BI_WORKSPACE_ID: ${{ secrets.POWER_BI_WORKSPACE_ID }}
+          POWER_BI_DATASET_ID:   ${{ secrets.POWER_BI_DATASET_ID }}
+
+      - name: Commit updated data
+        run: |
+          git config user.name  "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git add Monthly_stock_data.json stock_data_combined_monthly.csv
+          git diff --quiet --cached || git commit -m "chore: monthly stock data update [skip ci]"
+          git push
