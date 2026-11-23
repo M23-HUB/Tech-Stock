@@ -1,63 +1,58 @@
 {
     "AAPL": {
         "company": "APPLE INC. (XMAS:AAPL)",
-        "last_updated": "2026-11-16 14:57",
+        "last_updated": "2026-11-23 17:31",
         "top_news": "No recent news found."
     },
     "AMZN": {
         "company": "AMAZON.COM, INC. (XMAS:AMZN)",
-        "last_updated": "2026-11-16 14:57",
+        "last_updated": "2026-11-23 17:31",
         "top_news": "No recent news found."
     },
     "BABA": {
         "company": "Alibaba Group Holding Limited (XMAS:BABA)",
-        "last_updated": "2026-11-16 14:58",
+        "last_updated": "2026-11-23 17:31",
         "top_news": "No recent news found."
     },
     "CRM": {
         "company": "SALESFORCE, INC. (XMAS:CRM)",
-        "last_updated": "2026-11-16 14:58",
+        "last_updated": "2026-11-23 17:32",
         "top_news": "No recent news found."
     },
     "FB": {
         "company": "Meta Platforms, Inc. (XMAS:FB)",
-        "last_updated": "2026-11-16 14:58",
+        "last_updated": "2026-11-23 17:32",
         "top_news": "No recent news found."
     },
     "GOOG": {
         "company": "ALPHABET INC. (XMAS:GOOG)",
-        "last_updated": "2026-11-16 14:58",
+        "last_updated": "2026-11-23 17:32",
         "top_news": [
             {
                 "title": "Google's 2025 Christmas cookie recipe map is here",
                 "link": "https://www.axios.com/2025/12/18/christmas-cookie-recipes-google-state-map-list-2025",
                 "source": "Axios"
-            },
-            {
-                "title": "Merry Xmas! Google Celebrates Christmas Day With Santa Tracker, Games, Movies",
-                "link": "https://news.abplive.com/technology/merry-christmas-google-celebrates-christmas-day-with-santa-tracker-games-movies-1652247",
-                "source": "ABP Live English"
             }
         ]
     },
     "INTC": {
         "company": "INTEL CORPORATION (XMAS:INTC)",
-        "last_updated": "2026-11-16 14:58",
+        "last_updated": "2026-11-23 17:32",
         "top_news": "No recent news found."
     },
     "MSFT": {
         "company": "MICROSOFT CORPORATION (XMAS:MSFT)",
-        "last_updated": "2026-11-16 14:58",
+        "last_updated": "2026-11-23 17:32",
         "top_news": "No recent news found."
     },
     "NVDA": {
         "company": "NVIDIA CORPORATION (XMAS:NVDA)",
-        "last_updated": "2026-11-16 14:58",
+        "last_updated": "2026-11-23 17:32",
         "top_news": "No recent news found."
     },
     "TSLA": {
         "company": "Tesla Inc",
-        "last_updated": "2026-11-16 14:58",
+        "last_updated": "2026-11-23 17:32",
         "top_news": "No recent news found."
     }
 }
